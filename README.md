@@ -1,45 +1,75 @@
 # Renewable Energy Output Prediction Using ANN
-Based on Negnevitsky — AI: A Guide to Intelligent Systems, Ch. 6
+Based on Negnevitsky - AI: A Guide to Intelligent Systems, Ch. 6
 
 ## Project Overview
-This project applies Artificial Neural Networks (ANN) to predict renewable energy output (specifically solar radiation/generation) based on weather and time-based features. The project uses a multi-layer perceptron (MLP) built with **TensorFlow/Keras** trained via backpropagation.
+This project builds an Artificial Neural Network (ANN) to predict hourly PV energy output (kWh) from weather and time-based input features. The workflow follows a supervised learning pipeline with chronological splitting, scaling, ANN training via backpropagation, and comparison against a linear regression baseline.
 
-## Architecture
-The Neural Network architecture follows the project specification:
-- **Input Layer**: Features include Air Temperature, Wind Speed, Relative Humidity, and Hour of the day.
-- **Hidden Layer 1**: 10 neurons (ReLU activation)
-- **Hidden Layer 2**: 8 neurons (ReLU activation)
-- **Output Layer**: 1 neuron (Linear activation) predicting Solar Radiation matching the target.
-- **Optimizer & Loss**: Adam optimizer, Mean Squared Error (MSE) loss function.
+## Model Architecture
+The implemented network follows the required structure:
+- Input Layer: 5 features (`Air_Temp`, `Wind_Speed`, `Relative_Humidity`, `hour`, `month`)
+- Hidden Layer 1: 10 neurons, ReLU activation
+- Hidden Layer 2: 8 neurons, ReLU activation
+- Dropout: 0.2 between hidden layers
+- Output Layer: 1 neuron, linear activation (predicting `Energy_kWh`)
+- Optimizer: Adam (`learning_rate=0.001`)
+- Loss: Mean Squared Error (MSE)
+- Early Stopping: patience of 10 epochs, restore best weights
 
 ## Datasets
-The project uses merged, hourly data extracted from two datasets:
-- **DATARENER.csv** (PVGIS ERA5): Contains solar irradiance, temperature, and wind speed.
-- **Humidity.csv**: Contains relative humidity readings.
+The notebook merges two hourly datasets collected for the same site and year:
+- `Datasets/maindata.csv` from the JRC PVGIS tools: [https://re.jrc.ec.europa.eu/pvg_tools/en/#HR](https://re.jrc.ec.europa.eu/pvg_tools/en/#HR)
+- `Datasets/Humidity.csv` from the NREL NSRDB data viewer: [https://nsrdb.nrel.gov/data-viewer](https://nsrdb.nrel.gov/data-viewer)
 
-### Preprocessing Steps
-- Datasets are merged on matching hourly timestamps.
-- Missing values are interpolated and filled using median values.
-- **Chronological Split**: Data is split into 70% Training, 15% Validation, and 15% Testing datasets to prevent data leakage.
-- **Scaling**: All input features and target variables are normalized using MinMaxScaler bound between [0, 1].
+Site information:
+- Location: Iloilo City
+- Latitude: 10.743
+- Longitude: 122.529
+- Year covered: 2020 to 2020
+
+`maindata.csv` includes PV output power `P` (W), solar irradiance, temperature, and wind speed. `Humidity.csv` provides relative humidity for the same hourly period.
+
+### Target Definition
+- `P` is converted from watts to hourly energy output:
+- `Energy_kWh = P / 1000.0`
+
+## Preprocessing
+- Parse timestamps and align both datasets to hourly resolution
+- Inner join on `Timestamp`
+- Convert numeric columns and handle missing values with interpolation + median fill
+- Feature engineering: `hour`, `month`, `day_of_week`, `season`
+- Chronological split: 70% train, 15% validation, 15% test
+- MinMax scaling for features and target
 
 ## Evaluation
-The model is evaluated and compared against a **Linear Regression** baseline model. Performance is measured using:
-- **RMSE** (Root Mean Squared Error)
-- **MAE** (Mean Absolute Error)
-- **R² Score** (Coefficient of Determination)
+The ANN is evaluated against a linear regression baseline using:
+- RMSE
+- MAE
+- R2 Score
 
-The notebook generates visualizations comparing the Training vs Validation Loss, and actual vs predicted values for both the ANN and the baseline.
+Visual outputs include:
+- Training and validation loss curves
+- Predicted vs actual scatter plots (kWh)
+- Feature-target correlation summary
+- Model architecture diagram
 
 ## How to Run
+1. Install dependencies:
 
-1. **Install Dependencies**: Ensure you have the required libraries installed. You can install them via pip:
-   \\ash
-   pip install numpy pandas matplotlib seaborn scikit-learn tensorflow
-   \
-2. **Open the Notebook**: Open enewable_energy_ann.ipynb\ in Jupyter Notebook, VS Code, or Google Colab.
-3. **Download Datasets**: Ensure the \Datasets/\ folder containing \DATARENER.csv\ and \Humidity.csv\ is placed in the same directory as the notebook.
-4. **Run All Cells**: Execute the notebook to observe the preprocessing, training progress (EarlyStopping enabled), model comparisons, and graph outputs.
+```bash
+pip install -r requirements.txt
+```
+
+2. Ensure the `Datasets` folder contains:
+- `maindata.csv`
+- `Humidity.csv`
+
+3. Open and run all cells in `renewable_energy_ann.ipynb`.
 
 ## Outputs
-- \rtifacts/ann_model.h5\: The final trained Keras neural network model.
+- `artifacts/ann_model.h5`: trained ANN model
+- `artifacts/model_architecture.png`: architecture diagram
+- Notebook tables and plots for metrics and comparisons
+
+## Notes
+- Model diagram export requires `pydot` and Graphviz support.
+- For reproducible results, run the notebook from top to bottom in a fresh kernel.
