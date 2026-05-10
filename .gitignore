@@ -4,3 +4,5 @@ __pycache__/
 venv/
 venv_tf/
 .venv_tf/
+artifacts/
+.artifacts/
